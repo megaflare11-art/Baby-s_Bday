@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Happy Birthday — surprise!</title>
+  <style>
+    :root{--bg:#fff8fb;--accent:#ff6fb5;--muted:#6b6b6b}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff8fb 0%, #fff0f6 50%, #ffeef3 100%);}
+    .card{width:92vw;max-width:980px;height:600px;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,0.12);background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.7));padding:26px;position:relative;overflow:hidden}
+
+    header{display:flex;align-items:center;gap:16px}
+    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff9ac1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:22px}
+    h1{margin:0;font-size:20px;color:#333}
+    p{margin:0;color:var(--muted);font-size:13px}
+
+    .stage{position:relative;margin-top:14px;border-radius:12px;overflow:hidden;height:430px;background:linear-gradient(180deg,#fff 0%,#fff6fb 100%);display:flex;align-items:center;justify-content:center}
+
+    .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 800ms ease;transform:scale(1.02)}
+    .slide.show{opacity:1;transform:scale(1)}
+    .slide img{max-width:100%;max-height:100%;object-fit:cover;border-radius:10px;filter:drop-shadow(0 10px 30px rgba(255,111,181,0.08))}
+
+    .center-btn{position:absolute;left:50%;transform:translateX(-50%);bottom:20px}
+    button.big{background:linear-gradient(90deg,var(--accent),#ff8cb0);border:0;padding:12px 26px;border-radius:999px;color:white;font-weight:700;font-size:16px;cursor:pointer;box-shadow:0 10px 25px rgba(255,111,181,0.18);}
+    button.big:active{transform:translateY(1px)}
+
+    .message{position:absolute;left:24px;top:120px;font-size:36px;font-weight:800;color:#fff;text-shadow:0 8px 30px rgba(0,0,0,0.22);pointer-events:none;opacity:0;transform:translateY(6px);transition:all 700ms cubic-bezier(.18,.9,.32,1)}
+    .message.visible{opacity:1;transform:translateY(0)}
+
+    .sub{position:absolute;left:24px;top:180px;color:#fffbfe;font-weight:600;opacity:0;transition:opacity 1000ms ease}
+    .sub.visible{opacity:1}
+
+    /* tiny confetti */
+    .confetti{position:absolute;inset:0;pointer-events:none}
+    .confetti i{position:absolute;display:block;width:8px;height:12px;opacity:0;transform:translateY(-40px) rotate(10deg)}
+
+    /* small caption */
+    footer{position:absolute;right:20px;bottom:18px;color:var(--muted);font-size:12px}
+
+    /* responsive */
+    @media (max-width:640px){.card{height:84vh;padding:18px}.message{font-size:28px;top:110px}}
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <header>
+      <div class="logo">💖</div>
+      <div>
+        <h1>Press the button — it’s for her 🥹</h1>
+        <p>Tip: click once to start the music and slideshow. Replace the images and audio file below with yours.</p>
+      </div>
+    </header>
+
+    <div class="stage" id="stage">
+      <!-- Slides: replace the src values in the JavaScript `slides` array with your own image file names or URLs -->
+      <div class="slide" id="slide-0"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1600&auto=format&fit=crop&crop=faces" alt="photo 1"></div>
+      <div class="slide" id="slide-1"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1600&auto=format&fit=crop&crop=faces" alt="photo 2"></div>
+      <div class="slide" id="slide-2"><img src="https://images.unsplash.com/photo-1511988617509-a57c8a288659?q=80&w=1600&auto=format&fit=crop&crop=faces" alt="photo 3"></div>
+
+      <div class="message" id="message">Happy Birthday, my silly girl!</div>
+      <div class="sub" id="sub">You make every day brighter — love you 💫</div>
+
+      <div class="confetti" id="confetti" aria-hidden="true"></div>
+    </div>
+
+    <div class="center-btn">
+      <button class="big" id="startBtn">Press I</button>
+    </div>
+
+    <footer>Made with ❤️ — customize the photos & song inside the HTML</footer>
+
+    <!-- Audio: replace 'song.mp3' with the filename or URL of the song you want to play. Put the mp3 in the same folder if opening locally. -->
+    <audio id="bgAudio" preload="auto">
+      <source src="song.mp3" type="audio/mpeg">
+      <!-- If you prefer an external URL, replace the src above with a full link. -->
+    </audio>
+  </div>
+
+  <script>
+    // CONFIG: replace these with your photo file names or URLs (in order)
+    const slides = [
+      // examples above are inline <img> elements already; you can change their src manually or update this array and the script to create elements dynamically.
+    ];
+
+    const startBtn = document.getElementById('startBtn');
+    const audio = document.getElementById('bgAudio');
+    const message = document.getElementById('message');
+    const sub = document.getElementById('sub');
+    const confettiLayer = document.getElementById('confetti');
+    const slideEls = Array.from(document.querySelectorAll('.slide'));
+    let idx = 0, timer = null;
+
+    function showSlide(i){
+      slideEls.forEach((s,si)=> s.classList.toggle('show', si===i));
+    }
+
+    function startSlideshow(){
+      showSlide(0);
+      idx = 0;
+      timer = setInterval(()=>{
+        idx = (idx+1) % slideEls.length;
+        showSlide(idx);
+      }, 3000);
+    }
+
+    function popMessage(){
+      message.classList.add('visible');
+      setTimeout(()=> sub.classList.add('visible'), 600);
+    }
+
+    function makeConfetti(){
+      // simple, lightweight confetti effect — creates 30 tiny pieces
+      for(let i=0;i<30;i++){
+        const el = document.createElement('i');
+        el.style.left = Math.random()*100 + '%';
+        el.style.top = Math.random()*40 + '%';
+        el.style.background = ['#ffd166','#06d6a0','#118ab2','#ef476f'][Math.floor(Math.random()*4)];
+        el.style.transform = `translateY(-30px) rotate(${Math.random()*360}deg)`;
+        el.style.opacity = 1;
+        confettiLayer.appendChild(el);
+        // animate
+        const fall = el.animate([
+          {transform: el.style.transform, opacity:1},
+          {transform: `translateY(${300 + Math.random()*300}px) rotate(${Math.random()*720}deg)`, opacity:0.05}
+        ],{duration:2000 + Math.random()*1600, easing:'cubic-bezier(.2,.8,.2,1)'});
+        fall.onfinish = ()=> el.remove();
+      }
+    }
+
+    startBtn.addEventListener('click', async function(){
+      try{
+        // play audio (user interaction required by browsers)
+        await audio.play();
+      }catch(e){
+        console.warn('audio blocked or not found', e);
+      }
+
+      // start slideshow + message + confetti
+      startSlideshow();
+      popMessage();
+      makeConfetti();
+
+      // change button to a pause/stop friendly label
+      startBtn.textContent = 'Playing — press to stop';
+
+      // toggle behavior: clicking while playing will stop everything
+      const stopHandler = ()=>{
+        audio.pause();
+        audio.currentTime = 0;
+        clearInterval(timer);
+        slideEls.forEach(s=>s.classList.remove('show'));
+        message.classList.remove('visible');
+        sub.classList.remove('visible');
+        confettiLayer.innerHTML = '';
+        startBtn.textContent = 'Press I';
+        startBtn.removeEventListener('click', stopHandler);
+      };
+
+      startBtn.addEventListener('click', stopHandler);
+    });
+
+    // Accessibility: show first slide when the page loads so there's no blank
+    window.addEventListener('load', ()=> showSlide(0));
+
+    // NOTE for you: to customize
+    // 1) Replace the three <div class="slide"><img src="..."></div> images near the top with your own photos (use relative paths if local).
+    // 2) Replace the <source src="song.mp3"> with the filename or URL of your chosen song.
+    // 3) Edit the message text above if you want a different message.
+    // 4) Save this file as birthday-surprise.html and open it in a browser (double-click). When testing locally, some browsers block local audio — you can drag the file into the browser or host it on a simple webserver.
+  </script>
+</body>
+</html>
